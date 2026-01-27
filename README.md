@@ -16,9 +16,10 @@ Since you need to submit this project, you have two options:
 2.  Submit the zip file.
 
 ### **Option 2: Deploy to the Web**
-1.  Upload this folder to GitHub.
+1.  Double-click `push_to_github.bat` to upload your code to:  
+    `https://github.com/hasnain-sayyid/CargoVan-Connect`
 2.  Go to [Render.com](https://render.com) and create a new Blueprint.
-3.  Connect your repository.
+3.  Connect your repository (`hasnain-sayyid/CargoVan-Connect`).
 4.  The system will automatically use the `render.yaml` file to deploy your site.
 
 ## **Technical Details (For Graders/Reviewers)**

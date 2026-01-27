@@ -11,9 +11,12 @@ services:
       - key: SECRET_KEY
         generateValue: true
 
-  # Frontend Service
-  - type: static
-    name: cargovan-frontend
+      - key: SECRET_KEY
+        generateValue: true
+
+# Frontend Service (Static Site)
+staticSites:
+  - name: cargovan-frontend
     runtime: static
     buildCommand: cd frontend && npm install && npm run build
     publishDir: frontend/build
