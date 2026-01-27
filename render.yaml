@@ -2,6 +2,7 @@ services:
   # Backend Service
   - type: web
     name: cargovan-backend
+    plan: free
     runtime: python
     buildCommand: cd backend && pip install -r requirements.txt
     startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port 10000
@@ -15,6 +16,7 @@ services:
 # Using separate web service properly avoids "static" type errors
   - type: web
     name: cargovan-frontend
+    plan: free
     runtime: node
     buildCommand: cd frontend && npm install && npm run build
     startCommand: cd frontend && npx serve -s build -l 10000
