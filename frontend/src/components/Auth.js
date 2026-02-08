@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import {
+  Container, Paper, Typography, TextField, Button, Box, Alert
+} from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://cargovan-backend.onrender.com');
 
@@ -27,44 +30,68 @@ function Auth({ onAuth }) {
   };
 
   return (
-    <div style={{ maxWidth: 320, margin: '0 auto', padding: 16, border: '1px solid #ccc', borderRadius: 8 }}>
-      <h2>{isLogin ? 'Login' : 'Sign Up'}</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          style={{ width: '100%', marginBottom: 8 }}
-        />
-        {!isLogin && (
-          <input
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
+    <Container component="main" maxWidth="xs">
+      <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Typography component="h1" variant="h5">
+          {isLogin ? 'Sign in' : 'Sign up'}
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+          <TextField
+            margin="normal"
             required
-            style={{ width: '100%', marginBottom: 8 }}
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={e => setEmail(e.target.value)}
           />
-        )}
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          style={{ width: '100%', marginBottom: 8 }}
-        />
-        <button type="submit" style={{ width: '100%', marginBottom: 8 }}>
-          {isLogin ? 'Login' : 'Sign Up'}
-        </button>
-      </form>
-      <button onClick={() => setIsLogin(!isLogin)} style={{ width: '100%' }}>
-        {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Login'}
-      </button>
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
-    </div>
+          {!isLogin && (
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="name"
+              label="Full Name"
+              name="name"
+              autoComplete="name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+          )}
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+          >
+            {isLogin ? 'Sign In' : 'Sign Up'}
+          </Button>
+          <Button
+            fullWidth
+            variant="text"
+            onClick={() => setIsLogin(!isLogin)}
+          >
+            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }
 

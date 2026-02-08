@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import {
+  Paper, Typography, List, ListItem, ListItemText,
+  Chip, Button, Box, Alert
+} from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://cargovan-backend.onrender.com');
 
@@ -35,36 +39,55 @@ function DriverDashboard() {
     setLoading(false);
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'accepted': return 'primary';
+      case 'completed': return 'success';
+      case 'rejected': return 'error';
+      default: return 'default';
+    }
+  };
+
   return (
-    <div>
-      <h2>Driver Dashboard</h2>
-      {error && <div className="error-message">{error}</div>}
-      <ul className="booking-list">
+    <Paper elevation={1} sx={{ p: 3, height: '100%' }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>Driver Dashboard</Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <List>
         {bookings.map(b => (
-          <li key={b.id} className="booking-item">
-            <div className="booking-route">
-              {b.pickup_location} → {b.dropoff_location}
-            </div>
-            <div className="booking-details">
-              <span>Van: {b.van_size}</span> •
-              <span>{b.time_slot}</span> •
-              <span className={`status-badge status-${b.status}`}>{b.status}</span>
-            </div>
+          <ListItem key={b.id} divider alignItems="flex-start" sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+              <ListItemText
+                primary={
+                  <Typography variant="subtitle1" fontWeight="600">
+                    {b.pickup_location} → {b.dropoff_location}
+                  </Typography>
+                }
+                secondary={
+                  <Typography variant="body2" component="span" color="text.secondary">
+                    Van: {b.van_size} • {b.time_slot}
+                  </Typography>
+                }
+              />
+              <Chip label={b.status} color={getStatusColor(b.status)} size="small" />
+            </Box>
+
             {b.status === 'pending' && (
-              <div className="action-buttons">
-                <button className="btn-small btn-accept" disabled={loading} onClick={() => updateStatus(b.id, 'accepted')}>Accept</button>
-                <button className="btn-small btn-reject" disabled={loading} onClick={() => updateStatus(b.id, 'rejected')}>Reject</button>
-              </div>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <Button variant="contained" size="small" disabled={loading} onClick={() => updateStatus(b.id, 'accepted')}>Top-up/Accept</Button>
+                <Button variant="outlined" color="error" size="small" disabled={loading} onClick={() => updateStatus(b.id, 'rejected')}>Reject</Button>
+              </Box>
             )}
             {b.status === 'accepted' && (
-              <div className="action-buttons">
-                <button className="btn-small btn-complete" disabled={loading} onClick={() => updateStatus(b.id, 'completed')}>Complete Trip</button>
-              </div>
+              <Box sx={{ mt: 1 }}>
+                <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => updateStatus(b.id, 'completed')}>Complete Trip</Button>
+              </Box>
             )}
-          </li>
+          </ListItem>
         ))}
-      </ul>
-    </div>
+        {bookings.length === 0 && <Typography color="text.secondary">No bookings to manage.</Typography>}
+      </List>
+    </Paper>
   );
 }
 

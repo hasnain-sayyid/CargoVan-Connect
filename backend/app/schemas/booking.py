@@ -9,6 +9,7 @@ class BookingBase(BaseModel):
     scheduled_time: str
     van_size: str
     time_slot: str
+    distance: str | None = None
 
 class BookingCreate(BookingBase):
     pass

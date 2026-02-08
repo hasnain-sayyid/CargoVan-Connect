@@ -12,3 +12,4 @@ class Booking(Base):
     scheduled_time = Column(String)
     van_size = Column(String)
     time_slot = Column(String)
+    distance = Column(String, nullable=True)

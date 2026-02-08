@@ -1,6 +1,7 @@
 # CargoVan Connect
+A booking system for local cargo van transport.
 
-This project has been fixed and is ready to run or deploy.
+> **Note**: Project recovered and deployed on 2026-01-26. fixed and is ready to run or deploy.
 
 ## **How to Run it (Quick Start)**
 
