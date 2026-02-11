@@ -164,9 +164,9 @@ function App() {
                       label="Van Size"
                       onChange={e => setVanSize(e.target.value)}
                     >
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
+                      <MenuItem value="small">Small</MenuItem>
+                      <MenuItem value="medium">Medium</MenuItem>
+                      <MenuItem value="large">Large</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
