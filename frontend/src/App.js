@@ -59,6 +59,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [distance, setDistance] = useState('');
+  const [duration, setDuration] = useState('');
+  const [toll, setToll] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
@@ -89,13 +91,20 @@ function App() {
       scheduled_time: new Date().toISOString(),
       van_size: vanSize,
       time_slot: timeSlot,
-      distance: distance // Include distance in payload
+      distance: distance, // Include distance in payload
+      duration_minutes: parseInt(duration) || 0,
+      toll: parseFloat(toll) || 0
     };
     try {
       await axios.post(`${API_URL}/bookings/`, bookingPayload);
       setPickup('');
       setDropoff('');
+      setPickup('');
+      setDropoff('');
       setDistance(''); // Reset distance
+      setDuration('');
+      setToll('');
+      setVanSize('small');
       setVanSize('small');
       setTimeSlot('8:00 AM - 10:00 AM');
       setSuccessMsg('Booking created successfully!');
@@ -196,6 +205,20 @@ function App() {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
+                  {/* Fare Display */}
+                  {console.log("Rendering Fare Box with:", { distance, duration })}
+                  {distance ? (
+                    <Box sx={{ mb: 2, p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+                      <Typography variant="subtitle2" color="text.secondary">Fare</Typography>
+                      <Typography variant="h4" color="primary" fontWeight="700">
+                        ${(20 + (2 * (parseFloat(distance) || 0)) + (0.5 * (parseFloat(duration) || 0))).toFixed(2)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Includes: Base ($20) + Distance (${(2 * (parseFloat(distance) || 0)).toFixed(2)}) + Time (${(0.5 * (parseFloat(duration) || 0)).toFixed(2)})
+                      </Typography>
+                    </Box>
+                  ) : null}
+
                   <Button
                     fullWidth
                     variant="contained"
@@ -220,7 +243,7 @@ function App() {
                 setPickup={setPickup}
                 setDropoff={setDropoff}
                 setDistance={setDistance}
-                activeBooking={bookings.find(b => b.status === 'pending' || b.status === 'accepted')}
+                setDuration={setDuration}
               />
             </Box>
           </Grid>
@@ -246,6 +269,7 @@ function App() {
                             <Typography variant="body2" component="span">
                               {b.van_size} van • {b.time_slot}
                               {b.distance && ` • ${b.distance} miles`}
+                              {b.fare && ` • $${b.fare}`}
                             </Typography>
                             <Chip label={b.status} color={getStatusColor(b.status)} size="small" />
                           </Box>

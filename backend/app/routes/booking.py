@@ -8,7 +8,26 @@ router = APIRouter()
 
 @router.post("/", response_model=BookingOut)
 def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
-    new_booking = Booking(**booking.dict())
+    # Calculate Fare
+    # Base: $20
+    # Mile: $2
+    # Minute: $0.50
+    # Toll: User input
+    
+    try:
+        dist = float(booking.distance) if booking.distance else 0.0
+    except ValueError:
+        dist = 0.0
+        
+    duration = booking.duration_minutes if booking.duration_minutes else 0
+    toll = booking.toll if booking.toll else 0.0
+    
+    calculated_fare = 20.0 + (2.0 * dist) + (0.50 * duration) + toll
+    
+    booking_data = booking.dict()
+    booking_data['fare'] = round(calculated_fare, 2)
+    
+    new_booking = Booking(**booking_data)
     db.add(new_booking)
     db.commit()
     db.refresh(new_booking)

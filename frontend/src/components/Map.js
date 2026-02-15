@@ -6,7 +6,7 @@ const MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
 const containerStyle = { width: '100%', height: '100%', minHeight: '400px' };
 const defaultCenter = { lat: 40.7128, lng: -74.0060 }; // Fallback (NYC)
 
-function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, activeBooking }) {
+function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration, activeBooking }) {
   const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: MAPS_API_KEY });
   const mapRef = useRef(null);
   const onLoad = useCallback(map => { mapRef.current = map; }, []);
@@ -34,34 +34,95 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, activeBookin
     }
   }, [pickup, dropoff, activeBooking]);
 
-  // Geocode address using OpenStreetMap (Nominatim)
+  // Geocode address using Google Maps Geocoder API
+  // Geocode address using Google Maps Geocoder API with OSM Fallback
+  const geocoder = useRef(null);
+
   const geocodeAddress = async (address) => {
     if (!address) return null;
+
+    // Try Google Maps First
+    if (window.google) {
+      if (!geocoder.current) geocoder.current = new window.google.maps.Geocoder();
+      try {
+        const result = await new Promise((resolve, reject) => {
+          geocoder.current.geocode({ address: address }, (results, status) => {
+            if (status === 'OK' && results[0]) resolve(results[0]);
+            else reject(status);
+          });
+        });
+        const location = result.geometry.location;
+        return { lat: location.lat(), lng: location.lng() };
+      } catch (e) {
+        console.warn("Google Geocoding failed, falling back to OSM:", e);
+      }
+    }
+
+    // Fallback to OSM (Nominatim)
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
       const data = await res.json();
       if (data && data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-        };
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       }
     } catch (e) {
-      console.error("Geocoding failed:", e);
+      console.error("OSM Geocoding failed:", e);
     }
     return null;
   };
 
   // Reverse Geocode (Lat/Lng -> Address)
   const reverseGeocode = async (lat, lng) => {
+    console.log(`Reverse Geocoding: ${lat}, ${lng}`);
+    // Try Google Maps First
+    if (window.google) {
+      console.log("Using Google Maps Geocoder");
+      if (!geocoder.current) geocoder.current = new window.google.maps.Geocoder();
+      try {
+        const result = await new Promise((resolve, reject) => {
+          geocoder.current.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === 'OK' && results[0]) resolve(results[0]);
+            else reject(status);
+          });
+        });
+        console.log("Google Geocode Success:", result.formatted_address);
+        return result.formatted_address;
+      } catch (e) {
+        console.warn("Google Reverse Geocoding failed, falling back to OSM:", e);
+      }
+    } else {
+      console.log("Google Maps not available, using OSM");
+    }
+
+    // Fallback to OSM (Nominatim)
     try {
+      console.log("Fetching from Nominatim...");
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
       const data = await res.json();
-      return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      if (data.display_name) {
+        console.log("OSM Success:", data.display_name);
+        return data.display_name;
+      }
     } catch (e) {
-      console.error("Reverse geocoding failed:", e);
-      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      console.error("OSM Reverse geocoding failed:", e);
     }
+
+    // Secondary Fallback: BigDataCloud (Free, No Key)
+    try {
+      console.log("Fetching from BigDataCloud...");
+      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const data = await res.json();
+      if (data && (data.locality || data.city || data.principalSubdivision)) {
+        const parts = [data.locality, data.city, data.principalSubdivision, data.countryName].filter(Boolean);
+        const address = parts.join(", ");
+        console.log("BigDataCloud Success:", address);
+        return address;
+      }
+    } catch (e) {
+      console.error("BigDataCloud failed:", e);
+    }
+
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   };
 
   // Handle Map Click
@@ -72,18 +133,81 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, activeBookin
     const lng = e.latLng.lng();
     const address = await reverseGeocode(lat, lng);
 
+    // Prioritize empty fields
     if (!pickup) {
       setPickup(address);
     } else if (!dropoff) {
       setDropoff(address);
+    } else {
+      // If both filled, maybe update pickup? Or do nothing? 
+      // User experience: click usually sets destination if pickup exists.
+      // But if both exist, let's just update dropoff for flexibility
+      setDropoff(address);
     }
   };
 
-  // Fetch route and trip info from OSRM
-  const fetchRoute = async (start, end) => {
+  // Fetch route and trip info from Google Directions Service
+  const directionsService = useRef(null);
+  const directionsRenderer = useRef(null);
+
+  const fetchRoute = useCallback((start, end) => {
+    if (!start || !end || !window.google) return;
+
+    if (!directionsService.current) {
+      directionsService.current = new window.google.maps.DirectionsService();
+    }
+
+    const request = {
+      origin: start,
+      destination: end,
+      travelMode: window.google.maps.TravelMode.DRIVING,
+    };
+
+    directionsService.current.route(request, (result, status) => {
+      if (status === window.google.maps.DirectionsStatus.OK) {
+        console.log("Google Directions Route Found:", result);
+
+        // Update local state for rendering
+        // We will use the DirectionsRenderer to show the route on the map if we want,
+        // or just parse the result like we did for OSRM. 
+        // For simplicity and better integration, parsing the result to get polyline points 
+        // is good, but DirectionsRenderer handles it automatically.
+        // Let's stick to consistent manual polyline rendering for now to match previous logic,
+        // OR switch to DirectionsRenderer (which is standard).
+        // Given existing code uses `routePath` state for Polyline, let's adapt:
+
+        const leg = result.routes[0].legs[0];
+        const distText = leg.distance.text;
+        const distValue = leg.distance.value; // meters
+        const durationText = leg.duration.text;
+        const durationValue = leg.duration.value; // seconds
+
+        const path = result.routes[0].overview_path.map(pt => ({ lat: pt.lat(), lng: pt.lng() }));
+        setRoutePath(path);
+
+        const distMiles = (distValue / 1609.34).toFixed(1);
+        const durationMin = Math.round(durationValue / 60);
+
+        setTripInfo({
+          distance: distMiles,
+          duration: durationMin,
+        });
+
+        if (setDistance) setDistance(distMiles);
+        if (setDuration) setDuration(durationMin);
+      } else {
+        console.warn("Google Directions failed (" + status + "), falling back to OSRM");
+        fetchRouteOSM(start, end);
+      }
+    });
+  }, [setDistance, setDuration]);
+
+  // Fallback OSRM Routing
+  const fetchRouteOSM = async (start, end) => {
     if (!start || !end) return;
     const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
     try {
+      console.log("Fetching route from OSRM...");
       const res = await fetch(url);
       const data = await res.json();
       if (data.routes && data.routes.length > 0) {
@@ -94,14 +218,19 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, activeBookin
         }));
         setRoutePath(coordinates);
         const distMiles = (route.distance / 1609.34).toFixed(1);
+        const durationMin = Math.round(route.duration / 60);
+        console.log("OSM Route Found:", { distMiles, durationMin });
+
         setTripInfo({
-          distance: distMiles, // meters to miles
-          duration: Math.round(route.duration / 60), // seconds to minutes
+          distance: distMiles,
+          duration: durationMin,
         });
+
         if (setDistance) setDistance(distMiles);
+        if (setDuration) setDuration(durationMin);
       }
     } catch (error) {
-      console.error("Routing failed:", error);
+      console.error("OSM Routing failed:", error);
     }
   };
 
@@ -137,10 +266,13 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, activeBookin
 
   useEffect(() => {
     if (pickupCoord && dropoffCoord) {
+      console.log("Coords updated, fetching route...", { pickupCoord, dropoffCoord });
       fetchRoute(pickupCoord, dropoffCoord);
     } else {
       setRoutePath([]);
       setTripInfo(null);
+      if (setDistance) setDistance('');
+      if (setDuration) setDuration('');
     }
   }, [pickupCoord, dropoffCoord]);
 

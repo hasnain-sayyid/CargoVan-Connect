@@ -10,10 +10,13 @@ class BookingBase(BaseModel):
     van_size: str
     time_slot: str
     distance: str | None = None
+    duration_minutes: int | None = None
+    toll: float = 0.0
 
 class BookingCreate(BookingBase):
     pass
 
 class BookingOut(BookingBase):
     id: int
+    fare: float | None = None
     model_config = {"from_attributes": True}

@@ -4,12 +4,17 @@ from sqlalchemy.orm import sessionmaker
 
 import os
 
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Go up two levels to reach 'backend' root if we want db there, or just keep it in db folder.
 # Current: sqlite:///./cargovanconnect.db implies it's in the CWD.
 # Let's put it in the backend root directory (parent of 'app').
 BACKEND_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
-DB_PATH = os.path.join(BACKEND_DIR, "cargovanconnect.db")
+DB_PATH = os.path.join(BACKEND_DIR, "cargovanconnect_v2.db")
+
+# Ensure the path uses forward slashes on Windows for SQLite URL compatibility
+if os.name == 'nt':
+    DB_PATH = DB_PATH.replace('\\', '/')
 
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 

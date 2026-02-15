@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from app.db.database import Base
 
 class Booking(Base):
@@ -13,3 +13,6 @@ class Booking(Base):
     van_size = Column(String)
     time_slot = Column(String)
     distance = Column(String, nullable=True)
+    duration_minutes = Column(Integer, nullable=True)
+    toll = Column(Float, default=0.0)
+    fare = Column(Float, nullable=True)

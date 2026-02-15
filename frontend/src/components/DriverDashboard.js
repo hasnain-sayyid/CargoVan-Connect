@@ -66,6 +66,7 @@ function DriverDashboard() {
                 secondary={
                   <Typography variant="body2" component="span" color="text.secondary">
                     Van: {b.van_size} • {b.time_slot}
+                    {b.fare && ` • $${b.fare}`}
                   </Typography>
                 }
               />
