@@ -61,13 +61,16 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
 
     // Fallback to OSM (Nominatim)
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (data && data.length > 0) {
         return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       }
     } catch (e) {
-      console.error("OSM Geocoding failed:", e);
+      console.error("OSM Geocoding failed or timed out:", e);
     }
     return null;
   };
@@ -98,14 +101,17 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     // Fallback to OSM (Nominatim)
     try {
       console.log("Fetching from Nominatim...");
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (data.display_name) {
         console.log("OSM Success:", data.display_name);
         return data.display_name;
       }
     } catch (e) {
-      console.error("OSM Reverse geocoding failed:", e);
+      console.error("OSM Reverse geocoding failed or timed out:", e);
     }
 
     // Secondary Fallback: BigDataCloud (Free, No Key)
@@ -215,8 +221,12 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
     try {
       console.log("Fetching route from OSRM...");
-      const res = await fetch(url);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await res.json();
+
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
         const coordinates = route.geometry.coordinates.map(coord => ({
@@ -228,19 +238,18 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
         const durationMin = Math.round(route.duration / 60);
         console.log("OSM Route Found:", { distMiles, durationMin });
 
-        setTripInfo({
-          distance: distMiles,
-          duration: durationMin,
-        });
+        setTripInfo({ distance: distMiles, duration: durationMin });
 
         if (setDistance) {
           console.log("Setting distance (OSM):", distMiles);
           setDistance(distMiles);
         }
         if (setDuration) setDuration(durationMin);
+      } else {
+        throw new Error("No OSRM routes found");
       }
     } catch (error) {
-      console.error("OSM Routing failed, using Haversine fallback:", error);
+      console.error("OSM Routing failed or timed out, using Haversine fallback:", error);
       const estDistance = calculateHaversine(start.lat, start.lng, end.lat, end.lng);
       const estDuration = Math.round(estDistance * 2); // Roughly 2 min per mile
 
