@@ -303,7 +303,25 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
       if (setDistance) setDistance('');
       if (setDuration) setDuration('');
     }
-  }, [pickupCoord, dropoffCoord]);
+  }, [pickupCoord, dropoffCoord, fetchRoute]);
+
+  // SAFETY TIMER: If we have coords but no tripInfo for 3 seconds, fire Haversine
+  useEffect(() => {
+    if (pickupCoord && dropoffCoord && !tripInfo) {
+      const timer = setTimeout(() => {
+        if (!tripInfo) {
+          console.warn("Safety timer triggered, forcing Haversine...");
+          const estDistance = calculateHaversine(pickupCoord.lat, pickupCoord.lng, dropoffCoord.lat, dropoffCoord.lng);
+          const estDuration = Math.round(estDistance * 2);
+          setRoutePath([pickupCoord, dropoffCoord]);
+          setTripInfo({ distance: estDistance, duration: estDuration });
+          if (setDistance) setDistance(estDistance);
+          if (setDuration) setDuration(estDuration);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [pickupCoord, dropoffCoord, tripInfo, setDistance, setDuration]);
 
   // Fit Bounds
   useEffect(() => {
