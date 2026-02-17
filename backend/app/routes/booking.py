@@ -15,8 +15,10 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     # Toll: User input
     
     try:
-        dist = float(booking.distance) if booking.distance else 0.0
-    except ValueError:
+        # Handle cases where distance might contain units like "6.3 miles" or "10 km"
+        dist_str = booking.distance if booking.distance else "0.0"
+        dist = float(dist_str.split()[0]) 
+    except (ValueError, IndexError):
         dist = 0.0
         
     duration = booking.duration_minutes if booking.duration_minutes else 0

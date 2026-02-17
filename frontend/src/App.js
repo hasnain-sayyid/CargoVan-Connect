@@ -11,7 +11,9 @@ import {
 import './App.css';
 
 // Smart default: if localhost, use 8000; otherwise assume standard Render URL format
-const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://cargovan-backend.onrender.com');
+// Smart default: handle localhost, 127.0.0.1, or production
+const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_URL = process.env.REACT_APP_API_URL || (isLocal ? 'http://localhost:8000' : 'https://cargovan-backend.onrender.com');
 
 const theme = createTheme({
   palette: {
@@ -72,6 +74,7 @@ function App() {
   const fetchBookings = async () => {
     try {
       const res = await axios.get(`${API_URL}/bookings/`);
+      console.log('Fetched bookings:', res.data); // Added logging
       setBookings(res.data);
     } catch (err) {
       console.error(err);
@@ -99,12 +102,9 @@ function App() {
       await axios.post(`${API_URL}/bookings/`, bookingPayload);
       setPickup('');
       setDropoff('');
-      setPickup('');
-      setDropoff('');
-      setDistance(''); // Reset distance
+      setDistance('');
       setDuration('');
       setToll('');
-      setVanSize('small');
       setVanSize('small');
       setTimeSlot('8:00 AM - 10:00 AM');
       setSuccessMsg('Booking created successfully!');
@@ -266,11 +266,15 @@ function App() {
                         }
                         secondary={
                           <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Typography variant="body2" component="span">
+                            <Typography variant="body2" component="span" color="text.secondary">
                               {b.van_size} van • {b.time_slot}
-                              {b.distance && ` • ${b.distance} miles`}
-                              {b.fare && ` • $${b.fare}`}
                             </Typography>
+                            {b.distance != null && b.distance !== "" && (
+                              <Chip label={`${b.distance} miles`} size="small" variant="outlined" />
+                            )}
+                            {b.fare != null && (
+                              <Chip label={`$${parseFloat(b.fare).toFixed(2)}`} size="small" color="primary" variant="filled" />
+                            )}
                             <Chip label={b.status} color={getStatusColor(b.status)} size="small" />
                           </Box>
                         }

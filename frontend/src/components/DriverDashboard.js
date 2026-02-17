@@ -5,7 +5,8 @@ import {
   Chip, Button, Box, Alert
 } from '@mui/material';
 
-const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://cargovan-backend.onrender.com');
+const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_URL = process.env.REACT_APP_API_URL || (isLocal ? 'http://localhost:8000' : 'https://cargovan-backend.onrender.com');
 
 function DriverDashboard() {
   const [bookings, setBookings] = useState([]);
@@ -64,10 +65,17 @@ function DriverDashboard() {
                   </Typography>
                 }
                 secondary={
-                  <Typography variant="body2" component="span" color="text.secondary">
-                    Van: {b.van_size} • {b.time_slot}
-                    {b.fare && ` • $${b.fare}`}
-                  </Typography>
+                  <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Typography variant="body2" component="span" color="text.secondary">
+                      Van: {b.van_size} • {b.time_slot}
+                    </Typography>
+                    {b.distance != null && b.distance !== "" && (
+                      <Chip label={`${b.distance} miles`} size="small" variant="outlined" />
+                    )}
+                    {b.fare != null && (
+                      <Chip label={`$${parseFloat(b.fare).toFixed(2)}`} size="small" color="primary" variant="filled" />
+                    )}
+                  </Box>
                 }
               />
               <Chip label={b.status} color={getStatusColor(b.status)} size="small" />
