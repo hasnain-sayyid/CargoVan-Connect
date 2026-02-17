@@ -60,9 +60,16 @@ function DriverDashboard() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
               <ListItemText
                 primary={
-                  <Typography variant="subtitle1" fontWeight="600">
-                    {b.pickup_location} → {b.dropoff_location}
-                  </Typography>
+                  <Box sx={{ mb: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#16a34a', minWidth: '45px' }}>FROM:</Typography>
+                      <Typography variant="subtitle2" component="span">{b.pickup_location}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#dc2626', minWidth: '45px' }}>TO:</Typography>
+                      <Typography variant="subtitle2" component="span">{b.dropoff_location}</Typography>
+                    </Box>
+                  </Box>
                 }
                 secondary={
                   <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
