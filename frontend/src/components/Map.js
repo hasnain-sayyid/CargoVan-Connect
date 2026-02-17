@@ -151,7 +151,13 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
   const directionsRenderer = useRef(null);
 
   const fetchRoute = useCallback((start, end) => {
-    if (!start || !end || !window.google) return;
+    if (!start || !end) return;
+
+    if (!window.google) {
+      console.warn("Google Maps not loaded, skipping to OSRM fallback");
+      fetchRouteOSM(start, end);
+      return;
+    }
 
     if (!directionsService.current) {
       directionsService.current = new window.google.maps.DirectionsService();
@@ -193,7 +199,10 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
           duration: durationMin,
         });
 
-        if (setDistance) setDistance(distMiles);
+        if (setDistance) {
+          console.log("Setting distance (Google):", distMiles);
+          setDistance(distMiles);
+        }
         if (setDuration) setDuration(durationMin);
       } else {
         console.warn("Google Directions failed (" + status + "), falling back to OSRM");
@@ -226,7 +235,10 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
           duration: durationMin,
         });
 
-        if (setDistance) setDistance(distMiles);
+        if (setDistance) {
+          console.log("Setting distance (OSM):", distMiles);
+          setDistance(distMiles);
+        }
         if (setDuration) setDuration(durationMin);
       }
     } catch (error) {

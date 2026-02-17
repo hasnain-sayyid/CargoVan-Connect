@@ -206,16 +206,24 @@ function App() {
                 </Grid>
                 <Grid item xs={12}>
                   {/* Fare Display */}
-                  {console.log("Rendering Fare Box with:", { distance, duration })}
-                  {distance ? (
+                  {console.log("Fare Box Render Check - Distance:", distance, "Pickup:", pickup, "Dropoff:", dropoff)}
+                  {pickup && dropoff ? (
                     <Box sx={{ mb: 2, p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                      <Typography variant="subtitle2" color="text.secondary">Fare</Typography>
-                      <Typography variant="h4" color="primary" fontWeight="700">
-                        ${(20 + (2 * (parseFloat(distance) || 0)) + (0.5 * (parseFloat(duration) || 0))).toFixed(2)}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Includes: Base ($20) + Distance (${(2 * (parseFloat(distance) || 0)).toFixed(2)}) + Time (${(0.5 * (parseFloat(duration) || 0)).toFixed(2)})
-                      </Typography>
+                      <Typography variant="subtitle2" color="text.secondary">Estimated Fare</Typography>
+                      {distance ? (
+                        <>
+                          <Typography variant="h4" color="primary" fontWeight="700">
+                            ${(20 + (2 * (parseFloat(distance) || 0)) + (0.5 * (parseFloat(duration) || 0))).toFixed(2)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Includes: Base ($20) + Distance (${(2 * (parseFloat(distance) || 0)).toFixed(2)}) + Time (${(0.5 * (parseFloat(duration) || 0)).toFixed(2)})
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          Calculating route and distance...
+                        </Typography>
+                      )}
                     </Box>
                   ) : null}
 
