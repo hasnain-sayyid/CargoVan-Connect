@@ -52,7 +52,8 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
           });
         });
         const location = result.geometry.location;
-        return { lat: location.lat(), lng: location.lng() };
+        // Normalize to plain object for all services
+        return { lat: Number(location.lat()), lng: Number(location.lng()) };
       } catch (e) {
         console.warn("Google Geocoding failed, falling back to OSM:", e);
       }
@@ -170,22 +171,10 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     };
 
     directionsService.current.route(request, (result, status) => {
+      console.log(`Google Directions Status: ${status}`);
       if (status === window.google.maps.DirectionsStatus.OK) {
-        console.log("Google Directions Route Found:", result);
-
-        // Update local state for rendering
-        // We will use the DirectionsRenderer to show the route on the map if we want,
-        // or just parse the result like we did for OSRM. 
-        // For simplicity and better integration, parsing the result to get polyline points 
-        // is good, but DirectionsRenderer handles it automatically.
-        // Let's stick to consistent manual polyline rendering for now to match previous logic,
-        // OR switch to DirectionsRenderer (which is standard).
-        // Given existing code uses `routePath` state for Polyline, let's adapt:
-
         const leg = result.routes[0].legs[0];
-        const distText = leg.distance.text;
         const distValue = leg.distance.value; // meters
-        const durationText = leg.duration.text;
         const durationValue = leg.duration.value; // seconds
 
         const path = result.routes[0].overview_path.map(pt => ({ lat: pt.lat(), lng: pt.lng() }));
@@ -194,22 +183,31 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
         const distMiles = (distValue / 1609.34).toFixed(1);
         const durationMin = Math.round(durationValue / 60);
 
-        setTripInfo({
-          distance: distMiles,
-          duration: durationMin,
-        });
-
+        setTripInfo({ distance: distMiles, duration: durationMin });
         if (setDistance) {
           console.log("Setting distance (Google):", distMiles);
           setDistance(distMiles);
         }
         if (setDuration) setDuration(durationMin);
       } else {
-        console.warn("Google Directions failed (" + status + "), falling back to OSRM");
+        console.warn("Google Directions failed, trying OSRM");
         fetchRouteOSM(start, end);
       }
     });
   }, [setDistance, setDuration]);
+
+  // FINAL FALLBACK: Haversine Distance (Straight Line)
+  const calculateHaversine = (lat1, lon1, lat2, lon2) => {
+    const R = 3958.8; // Earth radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return (distance * 1.25).toFixed(1); // 1.25x factor for real-world road distance
+  };
 
   // Fallback OSRM Routing
   const fetchRouteOSM = async (start, end) => {
@@ -242,7 +240,17 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
         if (setDuration) setDuration(durationMin);
       }
     } catch (error) {
-      console.error("OSM Routing failed:", error);
+      console.error("OSM Routing failed, using Haversine fallback:", error);
+      const estDistance = calculateHaversine(start.lat, start.lng, end.lat, end.lng);
+      const estDuration = Math.round(estDistance * 2); // Roughly 2 min per mile
+
+      setRoutePath([start, end]); // Straight line on map
+      setTripInfo({ distance: estDistance, duration: estDuration });
+      if (setDistance) {
+        console.log("Setting distance (Haversine):", estDistance);
+        setDistance(estDistance);
+      }
+      if (setDuration) setDuration(estDuration);
     }
   };
 
