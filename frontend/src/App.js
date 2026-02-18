@@ -74,8 +74,21 @@ function App() {
   const fetchBookings = async () => {
     try {
       const res = await axios.get(`${API_URL}/bookings/`);
-      console.log('Fetched bookings:', res.data); // Added logging
-      setBookings(res.data);
+      const statusPriority = {
+        'pending': 1,
+        'accepted': 2,
+        'completed': 3,
+        'rejected': 4
+      };
+
+      const sortedData = [...res.data].sort((a, b) => {
+        const priorityA = statusPriority[a.status] || 99;
+        const priorityB = statusPriority[b.status] || 99;
+        return priorityA - priorityB;
+      });
+
+      console.log('Fetched and sorted bookings:', sortedData);
+      setBookings(sortedData);
     } catch (err) {
       console.error(err);
     }
