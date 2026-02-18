@@ -17,6 +17,13 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
 
+  // Helper to compare coordinates
+  const isSameCoord = (c1, c2) => {
+    if (!c1 && !c2) return true;
+    if (!c1 || !c2) return false;
+    return Math.abs(c1.lat - c2.lat) < 0.0001 && Math.abs(c1.lng - c2.lng) < 0.0001;
+  };
+
   // Get User Location on Mount
   useEffect(() => {
     if (navigator.geolocation && !pickup && !dropoff && !activeBooking) {
@@ -270,13 +277,16 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     (async () => {
       if (targetPickup) {
         const coord = await geocodeAddress(targetPickup);
-        if (!cancelled) setPickupCoord(coord);
+        if (!cancelled && !isSameCoord(coord, pickupCoord)) {
+          console.log("New pickup coord geocoded:", coord);
+          setPickupCoord(coord);
+        }
       } else {
-        setPickupCoord(null);
+        if (!cancelled && pickupCoord !== null) setPickupCoord(null);
       }
     })();
     return () => { cancelled = true; };
-  }, [pickup, activeBooking]);
+  }, [pickup, activeBooking, pickupCoord]);
 
   useEffect(() => {
     let cancelled = false;
@@ -285,13 +295,16 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     (async () => {
       if (targetDropoff) {
         const coord = await geocodeAddress(targetDropoff);
-        if (!cancelled) setDropoffCoord(coord);
+        if (!cancelled && !isSameCoord(coord, dropoffCoord)) {
+          console.log("New dropoff coord geocoded:", coord);
+          setDropoffCoord(coord);
+        }
       } else {
-        setDropoffCoord(null);
+        if (!cancelled && dropoffCoord !== null) setDropoffCoord(null);
       }
     })();
     return () => { cancelled = true; };
-  }, [dropoff, activeBooking]);
+  }, [dropoff, activeBooking, dropoffCoord]);
 
   useEffect(() => {
     if (pickupCoord && dropoffCoord) {
@@ -305,9 +318,10 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     }
   }, [pickupCoord, dropoffCoord, fetchRoute]);
 
-  // SAFETY TIMER: If we have coords but no tripInfo for 3 seconds, fire Haversine
+  // SAFETY TIMER: If we have coords but no tripInfo for 2 seconds, fire Haversine
   useEffect(() => {
     if (pickupCoord && dropoffCoord && !tripInfo) {
+      console.log("Starting safety timer (2s)...");
       const timer = setTimeout(() => {
         if (!tripInfo) {
           console.warn("Safety timer triggered, forcing Haversine...");
@@ -318,7 +332,7 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
           if (setDistance) setDistance(estDistance);
           if (setDuration) setDuration(estDuration);
         }
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [pickupCoord, dropoffCoord, tripInfo, setDistance, setDuration]);
