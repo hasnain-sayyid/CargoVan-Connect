@@ -235,6 +235,13 @@ function App() {
                       ) : (
                         <Typography variant="body2" color="text.secondary">
                           Calculating route and distance...
+                          <Button
+                            size="small"
+                            onClick={() => { setDistance(''); setPickup(pickup + ' '); setTimeout(() => setPickup(pickup.trim()), 50); }}
+                            sx={{ ml: 1, textTransform: 'none', fontSize: '0.75rem', p: 0 }}
+                          >
+                            (Recalculate)
+                          </Button>
                         </Typography>
                       )}
                     </Box>
