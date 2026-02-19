@@ -89,6 +89,9 @@ function App() {
       });
 
       console.log('Fetched and sorted bookings:', sortedData);
+      if (sortedData.length > 0) {
+        console.log('Sample booking data (App):', sortedData[0]);
+      }
       setBookings(sortedData);
     } catch (err) {
       console.error(err);

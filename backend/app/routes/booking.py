@@ -39,6 +39,18 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[BookingOut])
 def list_bookings(db: Session = Depends(get_db)):
     bookings = db.query(Booking).all()
+    # Ensure every booking has a fare (calculate on the fly if missing)
+    for b in bookings:
+        if b.fare is None:
+            try:
+                dist_str = b.distance if b.distance else "0.0"
+                dist = float(dist_str.split()[0])
+            except (ValueError, IndexError):
+                dist = 0.0
+            
+            duration = b.duration_minutes if b.duration_minutes else 0
+            toll = b.toll if b.toll else 0.0
+            b.fare = round(20.0 + (2.0 * dist) + (0.50 * duration) + toll, 2)
     return bookings
 
 # Driver actions: accept, reject, complete

@@ -30,6 +30,10 @@ function DriverDashboard() {
         return b.id - a.id; // Newest first within same status
       });
 
+      console.log('Fetched and sorted bookings (Driver):', sortedData);
+      if (sortedData.length > 0) {
+        console.log('Sample booking data (Driver):', sortedData[0]);
+      }
       setBookings(sortedData);
     } catch (err) {
       setError('Could not fetch bookings');
