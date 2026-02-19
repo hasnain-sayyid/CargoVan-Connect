@@ -26,7 +26,8 @@ function DriverDashboard() {
       const sortedData = [...res.data].sort((a, b) => {
         const priorityA = statusPriority[a.status] || 99;
         const priorityB = statusPriority[b.status] || 99;
-        return priorityA - priorityB;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return b.id - a.id; // Newest first within same status
       });
 
       setBookings(sortedData);
