@@ -69,7 +69,7 @@ def root():
     import pydantic
     import sqlalchemy
     return {
-        "message": "CargoVan Connect API (FastAPI) - Latest Build v3",
+        "message": "CargoVan Connect API (FastAPI) - Latest Build v4",
         "pydantic_version": pydantic.__version__,
         "sqlalchemy_version": sqlalchemy.__version__
     }
