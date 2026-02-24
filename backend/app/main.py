@@ -36,6 +36,25 @@ app.add_middleware(
 app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(booking.router, prefix="/bookings", tags=["bookings"])
 
+@app.get("/debug/schema")
+def debug_schema():
+    import sqlite3
+    import os
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(bookings)")
+        columns = cursor.fetchall()
+        conn.close()
+        return {
+            "columns": columns, 
+            "db_path": DB_PATH, 
+            "exists": os.path.exists(DB_PATH),
+            "cwd": os.getcwd()
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/")
 def root():
     return {"message": "CargoVan Connect API (FastAPI)"}

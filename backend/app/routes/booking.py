@@ -28,6 +28,7 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     
     booking_data = booking.dict()
     booking_data['fare'] = round(calculated_fare, 2)
+    booking_data['distance'] = dist_str  # Ensure the stringified distance is saved
     
     new_booking = Booking(**booking_data)
     db.add(new_booking)
