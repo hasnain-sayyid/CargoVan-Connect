@@ -8,12 +8,17 @@ from app.db.database import engine
 
 
 
+from app.db.migrate import migrate_db
+from app.db.database import engine, DB_PATH
+
 app = FastAPI()
 
 # Create tables automatically on startup (safe for SQLite)
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    # Ensure missing columns are added to existing tables
+    migrate_db(DB_PATH)
 
 # Allow CORS for frontend dev servers
 app.add_middleware(
