@@ -40,6 +40,7 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
 def list_bookings(db: Session = Depends(get_db)):
     bookings = db.query(Booking).all()
     # Ensure every booking has a fare (calculate on the fly if missing)
+    has_updates = False
     for b in bookings:
         if b.fare is None:
             try:
@@ -51,6 +52,10 @@ def list_bookings(db: Session = Depends(get_db)):
             duration = b.duration_minutes if b.duration_minutes else 0
             toll = b.toll if b.toll else 0.0
             b.fare = round(20.0 + (2.0 * dist) + (0.50 * duration) + toll, 2)
+            has_updates = True
+            
+    if has_updates:
+        db.commit()
     return bookings
 
 # Driver actions: accept, reject, complete

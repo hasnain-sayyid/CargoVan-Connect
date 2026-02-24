@@ -94,10 +94,10 @@ function DriverDashboard() {
                     <Typography variant="body2" component="span" color="text.secondary">
                       Van: {b.van_size} • {b.time_slot}
                     </Typography>
-                    {b.distance != null && b.distance !== "" && (
+                    {b.distance !== null && b.distance !== undefined && b.distance !== "" && (
                       <Chip label={`${b.distance} miles`} size="small" variant="outlined" />
                     )}
-                    {b.fare != null && (
+                    {b.fare !== null && b.fare !== undefined && (
                       <Chip label={`$${parseFloat(b.fare).toFixed(2)}`} size="small" color="primary" variant="filled" />
                     )}
                   </Box>
