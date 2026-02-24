@@ -50,11 +50,26 @@ def debug_schema():
             "columns": columns, 
             "db_path": DB_PATH, 
             "exists": os.path.exists(DB_PATH),
-            "cwd": os.getcwd()
+            "cwd": os.getcwd(),
+            "last_id": id(migrate_db) # see if code changed
         }
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/migrate")
+def manual_migrate():
+    try:
+        migrate_db(DB_PATH)
+        return {"message": "Migration triggered successfully"}
     except Exception as e:
         return {"error": str(e)}
 
 @app.get("/")
 def root():
-    return {"message": "CargoVan Connect API (FastAPI)"}
+    import pydantic
+    import sqlalchemy
+    return {
+        "message": "CargoVan Connect API (FastAPI) - Latest Build v3",
+        "pydantic_version": pydantic.__version__,
+        "sqlalchemy_version": sqlalchemy.__version__
+    }
