@@ -273,66 +273,78 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
   useEffect(() => {
     let cancelled = false;
     const targetPickup = pickup || activeBooking?.pickup_location;
+    if (!targetPickup) {
+      if (pickupCoord !== null) setPickupCoord(null);
+      return;
+    }
 
     (async () => {
-      if (targetPickup) {
-        const coord = await geocodeAddress(targetPickup);
-        if (!cancelled && !isSameCoord(coord, pickupCoord)) {
-          console.log("New pickup coord geocoded:", coord);
-          setPickupCoord(coord);
-        }
-      } else {
-        if (!cancelled && pickupCoord !== null) setPickupCoord(null);
+      const coord = await geocodeAddress(targetPickup);
+      if (!cancelled && !isSameCoord(coord, pickupCoord)) {
+        console.log("New pickup coord geocoded:", coord);
+        setPickupCoord(coord);
+        // Clear old trip info when pickup changes
+        setTripInfo(null);
+        if (setDistance) setDistance('');
+        if (setDuration) setDuration('');
       }
     })();
     return () => { cancelled = true; };
-  }, [pickup, activeBooking, pickupCoord]);
+  }, [pickup, activeBooking]); // Removed pickupCoord from dependencies
 
   useEffect(() => {
     let cancelled = false;
     const targetDropoff = dropoff || activeBooking?.dropoff_location;
+    if (!targetDropoff) {
+      if (dropoffCoord !== null) setDropoffCoord(null);
+      return;
+    }
 
     (async () => {
-      if (targetDropoff) {
-        const coord = await geocodeAddress(targetDropoff);
-        if (!cancelled && !isSameCoord(coord, dropoffCoord)) {
-          console.log("New dropoff coord geocoded:", coord);
-          setDropoffCoord(coord);
-        }
-      } else {
-        if (!cancelled && dropoffCoord !== null) setDropoffCoord(null);
+      const coord = await geocodeAddress(targetDropoff);
+      if (!cancelled && !isSameCoord(coord, dropoffCoord)) {
+        console.log("New dropoff coord geocoded:", coord);
+        setDropoffCoord(coord);
+        // Clear old trip info when dropoff changes
+        setTripInfo(null);
+        if (setDistance) setDistance('');
+        if (setDuration) setDuration('');
       }
     })();
     return () => { cancelled = true; };
-  }, [dropoff, activeBooking, dropoffCoord]);
+  }, [dropoff, activeBooking]); // Removed dropoffCoord from dependencies
 
   useEffect(() => {
     if (pickupCoord && dropoffCoord) {
-      console.log("Coords updated, fetching route...", { pickupCoord, dropoffCoord });
+      console.log("Coords valid, fetching route...", { pickupCoord, dropoffCoord });
       fetchRoute(pickupCoord, dropoffCoord);
     } else {
+      console.log("Coords missing or reset, clearing route path");
       setRoutePath([]);
       setTripInfo(null);
       if (setDistance) setDistance('');
       if (setDuration) setDuration('');
     }
-  }, [pickupCoord, dropoffCoord, fetchRoute]);
+  }, [pickupCoord, dropoffCoord]); // Removed fetchRoute from dependencies since it's memoized correctly with setDistance/setDuration
 
   // SAFETY TIMER: If we have coords but no tripInfo for 2 seconds, fire Haversine
   useEffect(() => {
     if (pickupCoord && dropoffCoord && !tripInfo) {
-      console.log("Starting safety timer (2s)...");
+      console.log("Starting safety timer (2.5s) for route calculation...");
       const timer = setTimeout(() => {
-        if (!tripInfo) {
-          console.warn("Safety timer triggered, forcing Haversine...");
+        if (!tripInfo && pickupCoord && dropoffCoord) {
+          console.warn("Safety timer triggered - No route info yet, forcing Haversine...");
           const estDistance = calculateHaversine(pickupCoord.lat, pickupCoord.lng, dropoffCoord.lat, dropoffCoord.lng);
-          const estDuration = Math.round(estDistance * 2);
+          const estDuration = Math.round(parseFloat(estDistance) * 2);
           setRoutePath([pickupCoord, dropoffCoord]);
           setTripInfo({ distance: estDistance, duration: estDuration });
-          if (setDistance) setDistance(estDistance);
+          if (setDistance) {
+            console.log("Setting distance (Forced Haversine):", estDistance);
+            setDistance(estDistance);
+          }
           if (setDuration) setDuration(estDuration);
         }
-      }, 2000);
+      }, 2500);
       return () => clearTimeout(timer);
     }
   }, [pickupCoord, dropoffCoord, tripInfo, setDistance, setDuration]);
