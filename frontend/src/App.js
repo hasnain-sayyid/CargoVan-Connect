@@ -234,18 +234,18 @@ function App() {
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Includes: Base ($20) + Distance (${(2 * (parseFloat(distance) || 0)).toFixed(2)}) + Time (${(0.5 * (parseFloat(duration) || 0)).toFixed(2)})
+                            <Button
+                              size="small"
+                              onClick={() => { setDistance(''); }}
+                              sx={{ ml: 1, textTransform: 'none', fontSize: '0.75rem', color: '#94a3b8' }}
+                            >
+                              (Refresh)
+                            </Button>
                           </Typography>
                         </>
                       ) : (
                         <Typography variant="body2" color="text.secondary">
                           Calculating route and distance...
-                          <Button
-                            size="small"
-                            onClick={() => { setDistance(''); setPickup(pickup + ' '); setTimeout(() => setPickup(pickup.trim()), 50); }}
-                            sx={{ ml: 1, textTransform: 'none', fontSize: '0.75rem', p: 0 }}
-                          >
-                            (Recalculate)
-                          </Button>
                         </Typography>
                       )}
                     </Box>

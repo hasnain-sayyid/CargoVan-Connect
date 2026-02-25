@@ -327,24 +327,26 @@ function Map({ pickup, dropoff, setPickup, setDropoff, setDistance, setDuration,
     }
   }, [pickupCoord, dropoffCoord]); // Removed fetchRoute from dependencies since it's memoized correctly with setDistance/setDuration
 
-  // SAFETY TIMER: If we have coords but no tripInfo for 2 seconds, fire Haversine
+  // SAFETY TIMER: If we have coords but no tripInfo for 1.5 seconds, fire Haversine
   useEffect(() => {
     if (pickupCoord && dropoffCoord && !tripInfo) {
-      console.log("Starting safety timer (2.5s) for route calculation...");
+      console.log("Starting safety timer (1.5s) for route calculation...");
       const timer = setTimeout(() => {
         if (!tripInfo && pickupCoord && dropoffCoord) {
-          console.warn("Safety timer triggered - No route info yet, forcing Haversine...");
+          console.warn("Routing taking too long or service restricted - forcing Haversine fallback");
           const estDistance = calculateHaversine(pickupCoord.lat, pickupCoord.lng, dropoffCoord.lat, dropoffCoord.lng);
           const estDuration = Math.round(parseFloat(estDistance) * 2);
+
           setRoutePath([pickupCoord, dropoffCoord]);
           setTripInfo({ distance: estDistance, duration: estDuration });
+
           if (setDistance) {
             console.log("Setting distance (Forced Haversine):", estDistance);
             setDistance(estDistance);
           }
           if (setDuration) setDuration(estDuration);
         }
-      }, 2500);
+      }, 1500); // Reduced to 1.5s for snappier feel in demo
       return () => clearTimeout(timer);
     }
   }, [pickupCoord, dropoffCoord, tripInfo, setDistance, setDuration]);
